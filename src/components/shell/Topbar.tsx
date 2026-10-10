@@ -53,7 +53,10 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { notifications, markAllRead, clearNotifications, settings, pushSearch, pushToast } = useApp();
+  const { notifications, markAllRead, clearNotifications, settings, user, logout, pushSearch, pushToast } = useApp();
+
+  const displayName = user?.name ?? settings.name;
+  const displayEmail = user?.email ?? settings.email;
 
   const suggestions = useMemo(() => buildSuggestions(query), [query]);
   const unread = notifications.filter((n) => !n.read).length;
@@ -241,8 +244,8 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
                 aria-expanded={dopen}
                 className="flex items-center gap-2.5 rounded-xl border border-line py-1.5 pl-1.5 pr-2.5 transition hover:bg-white/5"
               >
-                <Avatar size={32} className="shrink-0" />
-                <span className="hidden text-sm font-medium text-ink sm:block">{settings.name}</span>
+                <Avatar size={32} name={displayName} className="shrink-0" />
+                <span className="hidden text-sm font-medium text-ink sm:block">{displayName}</span>
                 <ChevronDown className={cn("size-4 text-ink-muted transition-transform", dopen && "rotate-180")} />
               </button>
             )}
@@ -250,8 +253,8 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
             {(close) => (
               <div>
                 <div className="border-b border-line px-3 py-2.5">
-                  <p className="text-[13px] font-semibold text-ink">{settings.name}</p>
-                  <p className="truncate text-[12px] text-ink-muted">{settings.email}</p>
+                  <p className="text-[13px] font-semibold text-ink">{displayName}</p>
+                  <p className="truncate text-[12px] text-ink-muted">{displayEmail}</p>
                 </div>
                 <DropdownItem
                   icon={User}
@@ -277,7 +280,9 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
                   danger
                   onClick={() => {
                     close();
-                    pushToast("Signed out of the demo session — data stays on this device", "info");
+                    logout();
+                    navigate("/login");
+                    pushToast("Signed out — data stays on this device", "info");
                   }}
                 >
                   Sign out

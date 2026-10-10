@@ -8,7 +8,7 @@ import { useApp } from "@/store/app";
 export function Hero() {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
-  const { settings } = useApp();
+  const { settings, user } = useApp();
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-line bg-[radial-gradient(120%_140%_at_85%_20%,#14234a_0%,#0b1426_45%,#090f1d_100%)]">
@@ -30,7 +30,7 @@ export function Hero() {
         className="relative z-10 max-w-[540px] px-6 py-9 sm:px-9 sm:py-11"
       >
         <span className="inline-flex items-center gap-2 rounded-full border border-blue/30 bg-blue/12 px-3.5 py-1.5 text-[12.5px] font-medium text-blue-soft">
-          Welcome Back, {settings.name} <span aria-hidden="true">👋</span>
+          Welcome Back, {user?.name ?? settings.name} <span aria-hidden="true">👋</span>
         </span>
 
         <h1 className="mt-4 text-[30px] font-bold leading-[1.15] tracking-tight text-ink sm:text-[38px]">

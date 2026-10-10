@@ -35,6 +35,27 @@ page.on("pageerror", (err) => errors.push(`[pageerror] ${page.url()} :: ${err.me
 
 await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 1 });
 
+// Auth screens (logged out)
+await page.goto(BASE + "/signup", { waitUntil: "networkidle0", timeout: 30000 });
+await new Promise((r) => setTimeout(r, 1200));
+await page.screenshot({ path: "scripts/shots/signup.png", fullPage: false });
+console.log("shot: signup");
+
+await page.goto(BASE + "/login", { waitUntil: "networkidle0", timeout: 30000 });
+await new Promise((r) => setTimeout(r, 1200));
+await page.screenshot({ path: "scripts/shots/login.png", fullPage: false });
+console.log("shot: login");
+
+// Sign in as guest so protected routes render
+for (const b of await page.$$("button")) {
+  const t = await b.evaluate((el) => el.textContent ?? "");
+  if (t.includes("Continue as guest")) {
+    await b.click();
+    break;
+  }
+}
+await new Promise((r) => setTimeout(r, 1500));
+
 for (const [name, path] of ROUTES) {
   await page.goto(BASE + path, { waitUntil: "networkidle0", timeout: 30000 });
   await new Promise((r) => setTimeout(r, 1400));

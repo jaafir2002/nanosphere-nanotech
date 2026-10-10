@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/components/shell/AppLayout";
+import AuthPage from "@/pages/Auth";
 import DashboardPage from "@/pages/Dashboard";
 import ExplorePage from "@/pages/Explore";
 import MaterialDetailPage from "@/pages/MaterialDetail";
@@ -16,6 +17,14 @@ const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export const router = createBrowserRouter(
   [
+  {
+    path: "/login",
+    element: <AuthPage mode="login" />,
+  },
+  {
+    path: "/signup",
+    element: <AuthPage mode="signup" />,
+  },
   {
     path: "/",
     element: <AppLayout />,

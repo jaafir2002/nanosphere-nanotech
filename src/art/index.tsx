@@ -430,29 +430,47 @@ export function ResearchThumb({ kind, accent, className }: { kind: ResearchArt; 
 /*  Avatar + promo                                                             */
 /* -------------------------------------------------------------------------- */
 
-export function Avatar({ className, size = 40 }: { className?: string; size?: number }) {
+const AVATAR_GRADIENTS: [string, string, string][] = [
+  ["#38bdf8", "#6366f1", "#a855f7"],
+  ["#34d399", "#10b981", "#059669"],
+  ["#fbbf24", "#f59e0b", "#d97706"],
+  ["#fb7185", "#e11d48", "#be123c"],
+  ["#22d3ee", "#0ea5e9", "#2563eb"],
+];
+
+export function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+export function Avatar({ name = "Guest", className, size = 40 }: { name?: string; className?: string; size?: number }) {
+  const seed = Math.abs(hashSeed(name));
+  const grad = AVATAR_GRADIENTS[seed % AVATAR_GRADIENTS.length];
+  const gradientId = `avatar-grad-${seed}`;
   return (
     <svg viewBox="0 0 64 64" width={size} height={size} className={cn("rounded-full", className)} aria-hidden="true">
       <defs>
-        <linearGradient id="avatar-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="55%" stopColor="#6366f1" />
-          <stop offset="100%" stopColor="#a855f7" />
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={grad[0]} />
+          <stop offset="55%" stopColor={grad[1]} />
+          <stop offset="100%" stopColor={grad[2]} />
         </linearGradient>
-        <clipPath id="avatar-clip">
-          <circle cx="32" cy="32" r="32" />
-        </clipPath>
       </defs>
-      <g clipPath="url(#avatar-clip)">
-        <rect width="64" height="64" fill="url(#avatar-bg)" />
-        <circle cx="32" cy="58" r="24" fill="#0b1224" opacity="0.55" />
-        <circle cx="32" cy="27" r="12.5" fill="#f6d3b6" />
-        <path d="M32 41 c-13 0 -22 8 -24 20 h48 c-2 -12 -11 -20 -24 -20 z" fill="#111c31" />
-        <path d="M20.5 24 a12 12 0 0 1 23 -4 c1.5 6 -1 9 -4 9 -3 0 -4 -3 -8 -3 -3.5 0 -4.5 3 -7 3 -2.5 0 -4 -2 -4 -5 z" fill="#1b2338" />
-        <circle cx="27" cy="28" r="1.4" fill="#2b2b2b" />
-        <circle cx="37" cy="28" r="1.4" fill="#2b2b2b" />
-        <path d="M28.5 33.5 q3.5 2.5 7 0" stroke="#c98d70" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      </g>
+      <rect width="64" height="64" rx="32" fill={`url(#${gradientId})`} />
+      <text
+        x="32"
+        y="33"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="#0b1224"
+        fontSize="24"
+        fontWeight="700"
+        fontFamily="Inter, system-ui, sans-serif"
+      >
+        {initialsOf(name)}
+      </text>
     </svg>
   );
 }

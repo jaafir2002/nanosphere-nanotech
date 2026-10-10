@@ -30,6 +30,70 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 await page.setViewport({ width: 1440, height: 960 });
 
+// 0a. Root redirects to login when signed out
+await page.goto(BASE + "/", { waitUntil: "networkidle0" });
+await sleep(1000);
+check("Root redirects to /login when signed out", page.url().includes("/login"), page.url());
+await page.screenshot({ path: "scripts/shots/login.png" });
+
+// 0b. Continue as guest
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Continue as guest"));
+  btn?.click();
+});
+await sleep(1200);
+check("Continue as guest enters dashboard", page.url().replace(BASE, "") === "/", page.url());
+const guestShown = await page.evaluate(() => document.body.innerText.includes("Guest"));
+check("Guest name visible after login", guestShown);
+
+// 0c. Logout returns to login
+await page.evaluate(() => {
+  const trigger = [...document.querySelectorAll("header button")].find((b) => b.textContent?.includes("Guest"));
+  trigger?.click();
+});
+await sleep(500);
+await page.evaluate(() => {
+  const item = [...document.querySelectorAll("button")].find((el) => el.textContent?.trim() === "Sign out");
+  item?.click();
+});
+await sleep(900);
+check("Sign out returns to /login", page.url().includes("/login"), page.url());
+
+// 0d. Signup creates an account
+await page.goto(BASE + "/signup", { waitUntil: "networkidle0" });
+await sleep(800);
+await page.type('input[autocomplete="name"]', "Ada Nano");
+await page.type('input[autocomplete="email"]', "ada@nanosphere.io");
+await page.type('input[autocomplete="new-password"]', "secret123");
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Create account"));
+  btn?.click();
+});
+await sleep(1200);
+check("Signup enters dashboard as new user", page.url().replace(BASE, "") === "/", page.url());
+const adaShown = await page.evaluate(() => document.body.innerText.includes("Ada Nano"));
+check("New account name visible in UI", adaShown);
+
+// 0e. Logout then login with the created account
+await page.evaluate(() => {
+  const trigger = [...document.querySelectorAll("header button")].find((b) => b.textContent?.includes("Ada Nano"));
+  trigger?.click();
+});
+await sleep(500);
+await page.evaluate(() => {
+  const item = [...document.querySelectorAll("button")].find((el) => el.textContent?.trim() === "Sign out");
+  item?.click();
+});
+await sleep(900);
+await page.type('input[autocomplete="email"]', "ada@nanosphere.io");
+await page.type('input[autocomplete="current-password"]', "secret123");
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Sign in"));
+  btn?.click();
+});
+await sleep(1200);
+check("Login with created account works", page.url().replace(BASE, "") === "/", page.url());
+
 // 1. Dashboard full page
 await page.goto(BASE + "/", { waitUntil: "networkidle0" });
 await sleep(1600);

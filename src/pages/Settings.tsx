@@ -39,7 +39,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 }
 
 export default function SettingsPage() {
-  const { settings, updateSettings, pushToast, resetWorkspace, projects, datasets, saved, activities } = useApp();
+  const { settings, user, updateSettings, pushToast, resetWorkspace, projects, datasets, saved, activities } = useApp();
   const [name, setName] = useState(settings.name);
   const [email, setEmail] = useState(settings.email);
   const [role, setRole] = useState(settings.role);
@@ -180,8 +180,8 @@ export default function SettingsPage() {
               onClick={() => {
                 resetWorkspace();
                 setConfirmReset(false);
-                setName("Ragavi");
-                setEmail("ragavi@nanosphere.io");
+                setName(user?.name ?? "Researcher");
+                setEmail(user?.email ?? "researcher@nanosphere.io");
                 setRole("Principal Researcher");
               }}
             >

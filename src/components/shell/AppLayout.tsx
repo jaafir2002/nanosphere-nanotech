@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar, MobileDrawer } from "@/components/shell/Sidebar";
 import { Topbar } from "@/components/shell/Topbar";
@@ -10,8 +10,12 @@ import { useApp } from "@/store/app";
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { settings } = useApp();
+  const { settings, user } = useApp();
   const compact = settings.density === "compact";
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
 
   return (
     <div className="min-h-screen bg-void">

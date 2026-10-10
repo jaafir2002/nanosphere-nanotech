@@ -25,6 +25,18 @@ export interface Settings {
   emailDigest: boolean;
 }
 
+export interface AuthUser {
+  name: string;
+  email: string;
+  guest: boolean;
+}
+
+interface Account {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface Toast {
   id: string;
   message: string;
@@ -32,6 +44,7 @@ export interface Toast {
 }
 
 interface AppState {
+  user: AuthUser | null;
   activities: Activity[];
   notifications: AppNotification[];
   datasets: Dataset[];
@@ -40,6 +53,10 @@ interface AppState {
   searchHistory: string[];
   settings: Settings;
   toasts: Toast[];
+  login: (email: string, password: string) => string | null;
+  signup: (input: { name: string; email: string; password: string }) => string | null;
+  continueAsGuest: () => void;
+  logout: () => void;
   logActivity: (kind: ActivityKind, title: string, meta?: string) => void;
   markAllRead: () => void;
   clearNotifications: () => void;
@@ -61,8 +78,8 @@ interface AppState {
 const AppContext = createContext<AppState | null>(null);
 
 const DEFAULT_SETTINGS: Settings = {
-  name: "Ragavi",
-  email: "ragavi@nanosphere.io",
+  name: "Researcher",
+  email: "researcher@nanosphere.io",
   role: "Principal Researcher",
   density: "comfortable",
   defaultMetric: "electrical",
@@ -70,6 +87,8 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(() => readLS("user", null as AuthUser | null));
+  const [accounts, setAccounts] = useState<Account[]>(() => readLS("accounts", [] as Account[]));
   const [activities, setActivities] = useState<Activity[]>(() => readLS("activities", SEED_ACTIVITIES));
   const [notifications, setNotifications] = useState<AppNotification[]>(() => readLS("notifications", SEED_NOTIFICATIONS));
   const [datasets, setDatasets] = useState<Dataset[]>(() => readLS("datasets", SEED_DATASETS));
@@ -79,6 +98,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULT_SETTINGS, ...readLS("settings", {} as Partial<Settings>) }));
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  useEffect(() => writeLS("user", user), [user]);
+  useEffect(() => writeLS("accounts", accounts), [accounts]);
   useEffect(() => writeLS("activities", activities), [activities]);
   useEffect(() => writeLS("notifications", notifications), [notifications]);
   useEffect(() => writeLS("datasets", datasets), [datasets]);
@@ -95,6 +116,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const login = useCallback(
+    (email: string, password: string): string | null => {
+      const e = email.trim().toLowerCase();
+      if (!e || !password) return "Email and password are required.";
+      const acct = accounts.find((a) => a.email === e);
+      if (!acct) return "No account found for that email. Create one first.";
+      if (acct.password !== password) return "Incorrect password. Try again.";
+      const u: AuthUser = { name: acct.name, email: acct.email, guest: false };
+      setUser(u);
+      setSettings((prev) => ({ ...prev, name: u.name, email: u.email }));
+      return null;
+    },
+    [accounts],
+  );
+
+  const signup = useCallback(
+    (input: { name: string; email: string; password: string }): string | null => {
+      const name = input.name.trim();
+      const email = input.email.trim().toLowerCase();
+      if (!name) return "Name is required.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
+      if (input.password.length < 6) return "Password must be at least 6 characters.";
+      if (accounts.some((a) => a.email === email)) return "An account with this email already exists — sign in instead.";
+      const acct: Account = { name, email, password: input.password };
+      setAccounts((prev) => [...prev, acct]);
+      const u: AuthUser = { name, email, guest: false };
+      setUser(u);
+      setSettings((prev) => ({ ...prev, name: u.name, email: u.email }));
+      return null;
+    },
+    [accounts],
+  );
+
+  const continueAsGuest = useCallback(() => {
+    const u: AuthUser = { name: "Guest", email: "guest@nanosphere.local", guest: true };
+    setUser(u);
+    setSettings((prev) => ({ ...prev, name: u.name, email: u.email }));
+  }, []);
+
+  const logout = useCallback(() => {
+    setUser(null);
   }, []);
 
   const logActivity = useCallback((kind: ActivityKind, title: string, meta?: string) => {
@@ -176,6 +240,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
+    if (patch.name !== undefined || patch.email !== undefined) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: (patch.name ?? prev.name).trim() || prev.name,
+              email: (patch.email ?? prev.email).trim() || prev.email,
+            }
+          : prev,
+      );
+    }
   }, []);
 
   const resetWorkspace = useCallback(() => {
@@ -186,12 +261,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProjects(SEED_PROJECTS);
     setSaved(["graphene"]);
     setSearchHistory(["Carbon Nanotube"]);
-    setSettings(DEFAULT_SETTINGS);
+    setSettings(user ? { ...DEFAULT_SETTINGS, name: user.name, email: user.email } : DEFAULT_SETTINGS);
+    writeLS("user", user);
+    writeLS("accounts", accounts);
     pushToast("Demo workspace reset to defaults", "info");
-  }, [pushToast]);
+  }, [pushToast, user, accounts]);
 
   const value = useMemo<AppState>(
     () => ({
+      user,
       activities,
       notifications,
       datasets,
@@ -200,6 +278,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       searchHistory,
       settings,
       toasts,
+      login,
+      signup,
+      continueAsGuest,
+      logout,
       logActivity,
       markAllRead,
       clearNotifications,
@@ -218,6 +300,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       resetWorkspace,
     }),
     [
+      user,
       activities,
       notifications,
       datasets,
@@ -226,6 +309,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       searchHistory,
       settings,
       toasts,
+      login,
+      signup,
+      continueAsGuest,
+      logout,
       logActivity,
       markAllRead,
       clearNotifications,
