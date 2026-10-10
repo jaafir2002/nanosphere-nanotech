@@ -3,8 +3,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
-export default defineConfig(({ command }) => ({
-  base: command === "build" ? "/nanosphere-nanotech/" : "/",
+export default defineConfig(() => ({
+  base: process.env.NANO_BASE || (process.env.GITHUB_ACTIONS ? "/nanosphere-nanotech/" : "/"),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
